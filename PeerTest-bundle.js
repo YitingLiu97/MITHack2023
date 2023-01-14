@@ -1057,7 +1057,7 @@ var t=require("./bufferbuilder").BufferBuilder,e=require("./bufferbuilder").bina
 },{"./util":"BHXf","./peer":"Hxpd"}]},{},["iTK6"], null)
 //# sourceMappingURL=/peerjs.min.js.map
 WL.registerComponent('playbook-toggle', {
-    param: {type: WL.Type.Float, default: 1.0},
+    grey: {type: WL.Type.Material},
 }, {
     init() {
         this.toggled = false;
@@ -1084,8 +1084,12 @@ WL.registerComponent('playbook-toggle', {
         this.toggled = !this.toggled;
         const moveAmount = 0.030;
         if(this.toggled) {
+            //mute the audio 
+            // grey the background 
             this.knob.translate([-moveAmount, 0, 0]);
         } else {
+            // unmute the audio 
+            // ungrey the background 
             this.knob.translate([moveAmount, 0, 0]);
         }
     }
