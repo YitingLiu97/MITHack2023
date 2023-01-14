@@ -1175,6 +1175,20 @@ var t=require("./bufferbuilder").BufferBuilder,e=require("./bufferbuilder").bina
 "use strict";Object.defineProperty(exports,"__esModule",{value:!0});var e=require("./util"),r=require("./peer");exports.peerjs={Peer:r.Peer,util:e.util},exports.default=r.Peer,window.peerjs=exports.peerjs,window.Peer=r.Peer;
 },{"./util":"BHXf","./peer":"Hxpd"}]},{},["iTK6"], null)
 //# sourceMappingURL=/peerjs.min.js.map
+WL.registerComponent('placeScene', {
+    param: {type: WL.Type.Float, default: 1.0},
+}, {
+    init: function() {
+        console.log('init() with param', this.param);
+    },
+    start: function() {
+        console.log('start() with param', this.param);
+    },
+    update: function(dt) {
+        console.log('update() with delta time', dt);
+    },
+});
+
 WL.registerComponent('playbook-toggle', {
     grey: {type: WL.Type.Material},
 }, {
