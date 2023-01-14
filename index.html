@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
-    <link rel="preload" href="PeerTest-bundle.js?t=2023-01-14T21:30:53.916" as="script">
+    <link rel="preload" href="PeerTest-bundle.js?t=2023-01-14T22:00:47.091" as="script">
     <title>PeerTest</title>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -92,7 +92,7 @@
         };
     </script>
     
-    <script src="wonderland.min.js?t=2023-01-14T21:30:53.916"></script>
+    <script src="wonderland.min.js?t=2023-01-14T22:00:47.091"></script>
     <script type="module">
         function loadScript(scriptURL) {
             return new Promise((res, rej) => {
@@ -106,7 +106,7 @@
 
         async function init() {
             try {
-                await WL.loadRuntime('WonderlandRuntime');
+                await WL.loadRuntime('WonderlandRuntime-physx');
                 WL.onXRSupported.push((type, supported) => {
                     const button = document.getElementById(type + '-button');
                     if(button) button.dataset.supported = supported;
@@ -117,7 +117,7 @@
                     if(el) setTimeout(() => el.remove(), 2000);
                 })
 
-                const bundle = await loadScript("PeerTest-bundle.js?t=2023-01-14T21:30:53.916");
+                const bundle = await loadScript("PeerTest-bundle.js?t=2023-01-14T22:00:47.091");
                 bundle.id = 'bundle';
 
                 WL.scene.load('PeerTest.bin');
