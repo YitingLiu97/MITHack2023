@@ -68,9 +68,7 @@ WL.registerComponent('changeColor', {
     },
     
     
-    //grip to mute and unmute 
-    
-
+    //grip to mute and unmute
     onUnHover: function (_, cursor) {
         this.mesh.material = this.defaultMaterial;
         if (cursor.type == 'finger-cursor') {
@@ -347,19 +345,18 @@ WL.registerComponent('emojiReceiver', {
         // send message when you are interacting in XR 
         //peerManager.sendPackage("emoji","heart");
         
-        peerManager.addNetworkDataRecievedCallback("emoji",()=>{
-            console.log("data received, needs to spawn");
+        peerManager.addNetworkDataRecievedCallback("emoji-start",(d)=>{
+            console.log("emoji start received",d);
             //emoSpawner.spawn();
-        });  
-        
-        peerManager.removeNetworkDataRecievedCallback("emoji",()=>{
-            console.log("data received, needs to REMOVE");
+        });
+        peerManager.addNetworkDataRecievedCallback("emoji-stop",(d)=>{
+            console.log("emoji stop received",d);
+            //emoSpawner.spawn();
         });
 
         console.log('start() with param', this.param);
     },
     update: function(dt) {
-        console.log('update() with delta time', dt);
     },
 });
 
@@ -446,7 +443,7 @@ WL.registerComponent('emoji_particle_shooter', {
             obj.scale([0, 0, 0]);
         }
 
-        this.changeEmojiButton.addClickFunction(function(){if(this.changeEmojiButton.currentEmoji=='devil'){console.log('woohoo')}else{console.log('nope')}});
+        //this.changeEmojiButton.addClickFunction(function(){if(this.changeEmojiButton.currentEmoji=='devil'){console.log('woohoo')}else{console.log('nope')}});
     },
     update: function(dt) {
         this.time += dt;
@@ -527,25 +524,33 @@ WL.registerComponent('gun_trigger_manager', {
     peerComponent: {type: WL.Type.Object},
 
 }, {
-    init: function() {
+    init: function () {
 
     },
-    start: function() {
+    start: function () {
         const particleShooterFunction = this.particleShooter.getComponent("emoji_particle_shooter")
-        let peerManager=  this.peerComponent.getComponent('peer-manager');
+        let peerManager = this.peerComponent.getComponent('peer-manager');
 
         console.log(particleShooterFunction.active)
-        this.trigger.getComponent('cursor-target').addDownFunction(function(){
+        this.trigger.getComponent('cursor-target').addDownFunction(function () {
             particleShooterFunction.active = true;
             // send message when you are interacting in XR 
-            peerManager.sendPackage("emoji","heart");
+            peerManager.sendPackageImmediately("emoji-start", {type: "heart"});
+            console.log("sending emoji-start");
 
         });
-        this.trigger.getComponent('cursor-target').addUpFunction(function(){particleShooterFunction.objects.forEach(object => {
-            object.active = false;
-        }); particleShooterFunction.active = false});
+        this.trigger.getComponent('cursor-target').addUpFunction(function () {
+            particleShooterFunction.objects.forEach(object => {
+                object.active = false;
+            });
+            particleShooterFunction.active = false
+
+            peerManager.sendPackage("emoji-stop", {type: "heart"});
+            console.log("sending emoji-stop");
+
+        });
     },
-    
+
 });
 
 /**
@@ -744,45 +749,31 @@ WL.registerComponent('network-buttons', {
     hostButton: {type: WL.Type.Object},
     joinButton: {type: WL.Type.Object},
 }, {
-    start: function() {
-      this.pm = this.peerManagerObject.getComponent('peer-manager');
+    start: function () {
+        this.pm = this.peerManagerObject.getComponent('peer-manager');
+        this.pm.host();
+        console.log("trying to host");
 
-      /* If hostButton or joinButton are not specified, we search
-       * for them by name */
-      for (let c of this.object.children) {
-        if(c.name == 'HostButton') this.hostButton = this.hostButton || c;
-        if(c.name == 'JoinButton') this.joinButton = this.joinButton || c;
-      }
+        this.pm.peer.on('error', (e) => {
+            console.error(e);
+            this.pm.join();
+            console.log("trying to connect as guest");
 
-      this.hostButtonCollider = this.hostButton.getComponent('collision');
-      this.hostButton.getComponent('cursor-target').addClickFunction(this.pm.host.bind(this.pm));
+            this.pm.peer.on('error', (e) => {
+                console.error(e);
+                this.pm.host();
+                console.log("trying to host again");
 
-      this.joinButtonCollider = this.joinButton.getComponent('collision');
-      this.joinButton.getComponent('cursor-target').addClickFunction(this.pm.join.bind(this.pm));
+            });
+            
+        });
 
-      this.pm.addConnectionEstablishedCallback(this.hide.bind(this));
-      this.pm.addDisconnectCallback(this.show.bind(this));
-    },
-
-    show: function() {
-      if(this.cursor.getComponent('cursor').setEnabled)
-        this.cursor.getComponent('cursor').setEnabled(true);
-      this.hostButtonCollider.active = true;
-      this.joinButtonCollider.active = true;
-      this.object.setTranslationLocal([0, 0, -3])
-    },
-
-    hide: function() {
-      /* Old versions of the cursor component don't have the setEnabled function */
-      if(this.cursor.getComponent('cursor').setEnabled)
-        this.cursor.getComponent('cursor').setEnabled(false);
-      this.hostButtonCollider.active = false;
-      this.joinButtonCollider.active = false;
-      this.object.setTranslationLocal([0, -300, 0])
     }
+    
 });
 
 let isHost = false;
+
 WL.registerComponent("peer-manager", {
   serverId: { type: WL.Type.String, default: "THISISAWONDERLANDENGINEPLACEHOLDER" },
   networkSendFrequencyInS: { type: WL.Type.Float, default: 0.01 },
@@ -873,11 +864,11 @@ WL.registerComponent("peer-manager", {
       connection.send({ joinedPlayers: Object.keys(this.activePlayers), joined: true});
     });
     connection.on("close", () => this._onHostConnectionClose(connection));
-    connection.on("data", (data) => this._onHostDataRecieved(data, connection));
+    connection.on("data", (data) => this._onHostDataReceived(data, connection));
     this.object.setTranslationWorld([0, 0, 0]);
   },
 
-  _onHostDataRecieved: function(data, connection) {
+  _onHostDataReceived: function(data, connection) {
     if (data.transforms && this.activePlayers[connection.peer]) {
       this.activePlayers[connection.peer].setTransforms(data.transforms);
     }
@@ -938,8 +929,6 @@ WL.registerComponent("peer-manager", {
         document.body.appendChild(audio);
         audio.srcObject = stream;
         audio.autoplay = true;
-        // mute functionality 
-        console.log("audio muted is "+audio.muted);
         this.streams[id] = stream;
       });
     });
@@ -960,7 +949,7 @@ WL.registerComponent("peer-manager", {
     for (const cb of this.connectionEstablishedCallbacks) cb();
   },
 
-  _onClientDataRecieved: function(data) {
+  _onClientDataReceived: function(data) {
     const registeredCallbacksKeys = Object.keys(this.registeredNetworkCallbacks);
     const joined = "joined" in data;
 
@@ -1061,7 +1050,6 @@ WL.registerComponent("peer-manager", {
       document.body.appendChild(audio);
       audio.srcObject = stream;
       audio.autoplay = true;
-      
       this.streams[id] = stream;
     });
   },
@@ -1072,7 +1060,7 @@ WL.registerComponent("peer-manager", {
       metadata: { username: "TestName" },
     });
     this.connection.on("open", this._onClientConnected.bind(this));
-    this.connection.on("data", this._onClientDataRecieved.bind(this));
+    this.connection.on("data", this._onClientDataReceived.bind(this));
     this.connection.on("close", this._onClientClose.bind(this));
   },
 
@@ -1112,18 +1100,27 @@ WL.registerComponent("peer-manager", {
     this.disconnectCallbacks.splice(index, 1);
   },
 
-  addNetworkDataRecievedCallback: function(key, f) {
+  /* @deprecated Function was renamed to correct spelling */
+  addNetworkDataRecievedCallback: function(...args) {
+      return this.addNetworkDataReceivedCallback(...args);
+  },
+
+  addNetworkDataReceivedCallback: function(key, f) {
     this.registeredNetworkCallbacks = this.registeredNetworkCallbacks || {};
     this.registeredNetworkCallbacks[key] = f;
   },
 
-  removeNetworkDataRecievedCallback: function(key) {
+  /* @deprecated Function was renamed to correct spelling */
+  removeNetworkDataRecievedCallback: function(...args) {
+      return this.removeNetworkDataReceivedCallback(...args);
+  },
+
+  removeNetworkDataReceivedCallback: function(key) {
     delete this.registeredNetworkCallbacks[key];
   },
 
   sendPackage: function(key, data) {
     this.currentDataPackage[key] = data;
-    
   },
 
   sendPackageImmediately: function(key, data) {
