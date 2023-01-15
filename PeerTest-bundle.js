@@ -342,21 +342,20 @@ WL.registerComponent('emojiReceiver', {
     },
     start: function() {
         let peerManager=  this.peerComponent.getComponent('peer-manager');
-        let emoSpawner=  this.peerComponent.emojiSpawner('emoji_particle_shooter');
+        let emoSpawner=  this.emojiSpawner.getComponent('emoji_particle_shooter');
         
         // send message when you are interacting in XR 
         //peerManager.sendPackage("emoji","heart");
         
         peerManager.addNetworkDataRecievedCallback("emoji",()=>{
             console.log("data received, needs to spawn");
-            emoSpawner.spawn();
+            //emoSpawner.spawn();
         });  
         
         peerManager.removeNetworkDataRecievedCallback("emoji",()=>{
             console.log("data received, needs to REMOVE");
         });
-        
-        
+
         console.log('start() with param', this.param);
     },
     update: function(dt) {
@@ -376,8 +375,6 @@ WL.registerComponent('emojiSender', {
         let peerManager=  this.peerComponent.getComponent('peer-manager');
         let emoSpawner=  this.peerComponent.emojiSpawner('emoji_particle_shooter');
         
-        // send message when you are interacting in XR 
-        peerManager.sendPackage("emoji","heart");
         
       /*  peerManager.addNetworkDataRecievedCallback("emoji",()=>{
             console.log("data received, needs to spawn");
@@ -527,15 +524,23 @@ WL.registerComponent('emoji_particle_shooter', {
 WL.registerComponent('gun_trigger_manager', {
     trigger: {type: WL.Type.Object, default: null},
     particleShooter: {type: WL.Type.Object, default: null},
+    peerComponent: {type: WL.Type.Object},
+
 }, {
     init: function() {
 
     },
     start: function() {
         const particleShooterFunction = this.particleShooter.getComponent("emoji_particle_shooter")
-        
+        let peerManager=  this.peerComponent.getComponent('peer-manager');
+
         console.log(particleShooterFunction.active)
-        this.trigger.getComponent('cursor-target').addDownFunction(function(){particleShooterFunction.active = true;});
+        this.trigger.getComponent('cursor-target').addDownFunction(function(){
+            particleShooterFunction.active = true;
+            // send message when you are interacting in XR 
+            peerManager.sendPackage("emoji","heart");
+
+        });
         this.trigger.getComponent('cursor-target').addUpFunction(function(){particleShooterFunction.objects.forEach(object => {
             object.active = false;
         }); particleShooterFunction.active = false});
