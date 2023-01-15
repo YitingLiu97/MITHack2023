@@ -449,13 +449,7 @@ WL.registerComponent('emoji_particle_shooter', {
             obj.scale([0, 0, 0]);
         }
 
-        this.changeEmojiButton.addClickFunction(function(){if (mesh.mesh==this.devil){
-            mesh.mesh=this.love; mesh.material=this.lovemat;
-        } if(mesh.mesh==this.love){
-            mesh.mesh = this.think; mesh.material = this.thinkmat;
-        }else{
-            mesh.mesh = this.devil; mesh.material =this.devilmat;
-        }});
+        this.changeEmojiButton.addClickFunction(function(){if(this.changeEmojiButton.currentEmoji=='devil'){console.log('woohoo')}else{console.log('nope')}});
     },
     update: function(dt) {
         this.time += dt;
@@ -1426,15 +1420,16 @@ WL.registerComponent('playbook-toggle', {
 
 WL.registerComponent('setEmoji', {
     param: {type: WL.Type.Float, default: 1.0},
-}, {
+},{
     init: function() {
         console.log('init() with param', this.param);
+        var currentEmoji = 'devil'
     },
     start: function() {
         console.log('start() with param', this.param);
     },
     update: function(dt) {
-        console.log('update() with delta time', dt);
+
     },
 });
 
