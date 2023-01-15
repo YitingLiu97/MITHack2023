@@ -546,35 +546,28 @@ WL.registerComponent('gun_trigger_manager', {
 
     },
     start: function () {
+        const particleShooterFunction = this.particleShooter.getComponent("emoji_particle_shooter")
         let peerManager = this.peerComponent.getComponent('peer-manager');
 
+        console.log(particleShooterFunction.active)
         this.trigger.getComponent('cursor-target').addDownFunction(function () {
-            this.startShoot(true);
+            particleShooterFunction.active = true;
             // send message when you are interacting in XR 
             peerManager.sendPackageImmediately("emoji-start", {type: "heart"});
             console.log("sending emoji-start");
 
         });
         this.trigger.getComponent('cursor-target').addUpFunction(function () {
+            particleShooterFunction.objects.forEach(object => {
+                object.active = false;
+            });
+            particleShooterFunction.active = false
 
-            this.startShoot(false);
             peerManager.sendPackage("emoji-stop", {type: "heart"});
             console.log("sending emoji-stop");
 
         });
     },
-
-    
-    startShoot:function(start){
-        const particleShooterFunction = this.particleShooter.getComponent("emoji_particle_shooter")
-
-        if(!start){
-            particleShooterFunction.objects.forEach(object => {
-                object.active = false;
-            });
-        }
-        particleShooterFunction.active=start;
-    }
 
 });
 
@@ -1500,7 +1493,7 @@ WL.registerComponent('skybox', {
 
 
         this.peerManager.addNetworkDataRecievedCallback("change-light-sky" + this.object.name, (d)=>{
-            this.sendColor(d.color[0],d.color[1],d.color[2]); 
+            this.sendColor(d); 
             console.log("set color");
         });
 
@@ -1518,8 +1511,7 @@ WL.registerComponent('skybox', {
         this.skyMat.colorStop1 = [e, d, c, 1];
         this.skyMat.colorStop0 = [1, 1, 1, 1];
 
-        this.lightComponent.color.set([e, d, c]);
-        this.lightComponent2.color.set([d, e, c]);
+     
     },
     onClick: function () {
 
@@ -1528,7 +1520,8 @@ WL.registerComponent('skybox', {
         const e = Math.random() * d;
         
         this.sendColor(e,d,c);
-   
+        this.lightComponent.color.set([e, d, c]);
+        this.lightComponent2.color.set([d, e, c]);
         this.peerManager.sendPackageImmediately("change-light-sky" + this.object.name, {type:"sky", color: [e, d, c] });
 
 
