@@ -164,7 +164,6 @@ WL.registerComponent('collide', {
     },
 });
 
-let defaultMat;
 WL.registerComponent("controller-teleport-component", {
     peerComponent: {type:WL.Type.Object},
     muteUI: {type:WL.Type.Object},
@@ -206,7 +205,6 @@ WL.registerComponent("controller-teleport-component", {
         WL.onXRSessionStart.push(this.setupVREvents.bind(this));
         this.mesh = this.muteUI.getComponent('mesh');
         this.defaultMaterial = this.mesh.material;
-        defaultMat =   this.defaultMaterial; 
     },
     update: function() {
         let thumbstickXAxisInput = 0;
@@ -1493,7 +1491,7 @@ WL.registerComponent('skybox', {
 
 
         this.peerManager.addNetworkDataRecievedCallback("change-light-sky" + this.object.name, (d)=>{
-            this.sendColor(d); 
+            this.sendColor(d.color[0],d.color[1],d.color[2]); 
             console.log("set color");
         });
 
@@ -1511,7 +1509,8 @@ WL.registerComponent('skybox', {
         this.skyMat.colorStop1 = [e, d, c, 1];
         this.skyMat.colorStop0 = [1, 1, 1, 1];
 
-     
+        this.lightComponent.color.set([e, d, c]);
+        this.lightComponent2.color.set([d, e, c]);
     },
     onClick: function () {
 
@@ -1520,8 +1519,7 @@ WL.registerComponent('skybox', {
         const e = Math.random() * d;
         
         this.sendColor(e,d,c);
-        this.lightComponent.color.set([e, d, c]);
-        this.lightComponent2.color.set([d, e, c]);
+      
         this.peerManager.sendPackageImmediately("change-light-sky" + this.object.name, {type:"sky", color: [e, d, c] });
 
 
